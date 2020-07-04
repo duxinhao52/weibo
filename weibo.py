@@ -57,4 +57,4 @@ if __name__=='__main__':
         for item in parse_one_page(text):
             write_to_file(item)
             save_to_mongodb(item)
-    db.close()
+    client.close() #连接断开
