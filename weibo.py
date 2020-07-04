@@ -1,6 +1,14 @@
 import requests
 from pyquery import PyQuery as pq
 import json
+from pymongo import MongoClient
+
+#首先要连接上数据库再进行插入操作，而不是放在循环中每次都连接！
+#无须先在mongodb中创建库和集合，会自动创建！
+#mongo进入服务，show dbs显示出所有的库，use切换到库，db.集合名.find()显示数据！
+client=MongoClient(host='localhost',port=27017) #连接mongodb数据库
+db=client['weibolist']  #选择数据库
+collection=db['weibo']  #选择库中的集合
 max_page=25
 base_url='https://m.weibo.cn/api/container/getIndex?'
 headers={
@@ -38,6 +46,9 @@ def parse_one_page(text):
 def write_to_file(item):
     with open('ret.txt','a',encoding='utf-8') as f:
         f.write(json.dumps(item,ensure_ascii=False)+'\n')   #字典序列化，可写入文件,ensure_ascii可写入中文
+def save_to_mongodb(item):
+    if collection.insert(item):
+        print('Saved to Mongo')
 if __name__=='__main__':
     since_id=''
     for page in range(1,max_page+1):     #max_page为请求次数
@@ -45,3 +56,5 @@ if __name__=='__main__':
         since_id=text.get('data').get('cardlistInfo').get('since_id')   #拿到下次的since_id
         for item in parse_one_page(text):
             write_to_file(item)
+            save_to_mongodb(item)
+    db.close()
